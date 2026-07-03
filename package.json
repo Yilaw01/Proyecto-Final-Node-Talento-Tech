@@ -1,0 +1,30 @@
+{
+  "name": "proyecto-final-node-talento-tech",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Yilaw01/Proyecto-Final-Node-Talento-Tech.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/Yilaw01/Proyecto-Final-Node-Talento-Tech/issues"
+  },
+  "homepage": "https://github.com/Yilaw01/Proyecto-Final-Node-Talento-Tech#readme",
+  "dependencies": {
+    "body-parser": "^2.3.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "firebase": "^12.15.0",
+    "jsonwebtoken": "^9.0.3"
+  }
+}
