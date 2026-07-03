@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Panel de pruebas — API Productos</title>
+<style>
+  /* Mismos tokens de color que index.html, para que se sienta la misma "app" */
+  :root {
+    --bg: #0b0e14;
+    --panel: #131826;
+    --border: #212940;
+    --text: #e4e7ee;
+    --text-dim: #7d8494;
+    --amber: #ffb454;
+    --online: #6bcb77;
+    --danger: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    font-family: "IBM Plex Mono", "JetBrains Mono", ui-monospace, Menlo, monospace;
+    color: var(--text);
+    padding: 24px;
+    display: flex;
+    justify-content: center;
+  }
+  .wrap { width: 100%; max-width: 720px; }
+
+  a.back {
+    color: var(--text-dim);
+    font-size: 12px;
+    text-decoration: none;
+    display: inline-block;
+    margin-bottom: 14px;
+  }
+  a.back:hover { color: var(--amber); }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card h2 {
+    margin: 0 0 14px;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 4px; }
+  input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+  }
+  input:focus { outline: none; border-color: var(--amber); }
+
+  .row { display: flex; gap: 10px; }
+  .row > div { flex: 1; }
+
+  button {
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 9px 16px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  button:hover { opacity: 0.85; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-amber { background: var(--amber); color: #14100a; }
+  .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  .btn-danger { background: rgba(255,107,107,0.15); color: var(--danger); border: 1px solid rgba(255,107,107,0.3); }
+
+  .token-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    margin-bottom: 14px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); }
+  .dot.on { background: var(--online); }
+  .dot.off { background: var(--danger); }
+
+  .list { display: flex; flex-direction: column; gap: 8px; }
+  .item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  .item .name { color: var(--text); }
+  .item .meta { color: var(--text-dim); font-size: 11px; }
+  .item .id { color: var(--text-dim); font-size: 10px; }
+  .empty { color: var(--text-dim); font-size: 13px; text-align: center; padding: 20px 0; }
+
+  /* Consola de logs abajo, como una terminal real mostrando las respuestas crudas */
+  .console {
+    background: #05070c;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 11.5px;
+    max-height: 220px;
+    overflow-y: auto;
+    color: #8fefa0;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .console .line { margin-bottom: 6px; }
+  .console .err { color: var(--danger); }
+  .console .muted { color: var(--text-dim); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="/">← volver</a>
+
+  <!-- LOGIN -->
+  <div class="card">
+    <h2>Login</h2>
+    <div class="token-status">
+      <span class="dot off" id="tokenDot"></span>
+      <span id="tokenLabel">sin token</span>
+    </div>
+    <div class="row">
+      <div>
+        <label>usuario</label>
+        <input id="usuario" value="admin" />
+      </div>
+      <div>
+        <label>contraseña</label>
+        <input id="contrasena" type="password" value="admin123" />
+      </div>
+    </div>
+    <button class="btn-amber" onclick="login()">Iniciar sesión</button>
+  </div>
+
+  <!-- CREAR PRODUCTO -->
+  <div class="card">
+    <h2>Crear producto</h2>
+    <div class="row">
+      <div>
+        <label>nombre</label>
+        <input id="nombre" placeholder="Zapatillas" />
+      </div>
+      <div>
+        <label>precio</label>
+        <input id="precio" type="number" placeholder="25000" />
+      </div>
+      <div>
+        <label>stock</label>
+        <input id="stock" type="number" placeholder="10" />
+      </div>
+    </div>
+    <button class="btn-amber" onclick="crearProducto()">Crear</button>
+  </div>
+
+  <!-- LISTA DE PRODUCTOS -->
+  <div class="card">
+    <h2>Productos <span style="float:right; cursor:pointer; color:var(--amber);" onclick="cargarProductos()">↻ refrescar</span></h2>
+    <div class="list" id="lista">
+      <p class="empty">(sin cargar todavía — tocá "refrescar")</p>
+    </div>
+  </div>
+
+  <!-- CONSOLA -->
+  <div class="card">
+    <h2>Consola</h2>
+    <div class="console" id="consola"></div>
+  </div>
+
+</div>
+
+<script>
+  // El token se guarda en memoria (variable JS), NO en localStorage —
+  // así que se pierde si recargás la página y hay que loguearse de nuevo.
+  let token = null;
+
+  function log(texto, esError = false) {
+    const consola = document.getElementById('consola');
+    const linea = document.createElement('div');
+    linea.className = 'line' + (esError ? ' err' : '');
+    const hora = new Date().toLocaleTimeString();
+    linea.innerHTML = `<span class="muted">[${hora}]</span> ${texto}`;
+    consola.prepend(linea);
+  }
+
+  function actualizarEstadoToken(hayToken) {
+    document.getElementById('tokenDot').className = 'dot ' + (hayToken ? 'on' : 'off');
+    document.getElementById('tokenLabel').textContent = hayToken ? 'logueado ✓' : 'sin token';
+  }
+
+  async function login() {
+    const usuario = document.getElementById('usuario').value;
+    const contrasena = document.getElementById('contrasena').value;
+
+    try {
+      const res = await fetch('/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuario, contrasena })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        log(`POST /auth/login → ${res.status}: ${data.mensaje}`, true);
+        actualizarEstadoToken(false);
+        return;
+      }
+
+      token = data.token;
+      actualizarEstadoToken(true);
+      log(`POST /auth/login → 200: token obtenido`);
+    } catch (e) {
+      log(`Error de red en login: ${e.message}`, true);
+    }
+  }
+
+  async function cargarProductos() {
+    try {
+      const res = await fetch('/api/products');
+      const data = await res.json();
+      log(`GET /api/products → ${res.status}: ${data.length} producto(s)`);
+      renderLista(data);
+    } catch (e) {
+      log(`Error de red cargando productos: ${e.message}`, true);
+    }
+  }
+
+  function renderLista(productos) {
+    const lista = document.getElementById('lista');
+    if (!productos || productos.length === 0) {
+      lista.innerHTML = '<p class="empty">no hay productos todavía</p>';
+      return;
+    }
+    lista.innerHTML = productos.map(p => `
+      <div class="item">
+        <div>
+          <div class="name">${p.nombre ?? '(sin nombre)'}</div>
+          <div class="meta">$${p.precio ?? '-'} · stock: ${p.stock ?? '-'}</div>
+          <div class="id">${p.id}</div>
+        </div>
+        <button class="btn-danger" onclick="eliminarProducto('${p.id}')">eliminar</button>
+      </div>
+    `).join('');
+  }
+
+  async function crearProducto() {
+    if (!token) {
+      log('Necesitás loguearte antes de crear un producto', true);
+      return;
+    }
+
+    const nombre = document.getElementById('nombre').value;
+    const precio = Number(document.getElementById('precio').value);
+    const stock = Number(document.getElementById('stock').value);
+
+    try {
+      const res = await fetch('/api/products/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ nombre, precio, stock })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        log(`POST /api/products/create → ${res.status}: ${data.mensaje}`, true);
+        return;
+      }
+
+      log(`POST /api/products/create → 201: creado "${data.nombre}"`);
+      document.getElementById('nombre').value = '';
+      document.getElementById('precio').value = '';
+      document.getElementById('stock').value = '';
+      cargarProductos();
+    } catch (e) {
+      log(`Error de red creando producto: ${e.message}`, true);
+    }
+  }
+
+  async function eliminarProducto(id) {
+    if (!token) {
+      log('Necesitás loguearte antes de eliminar un producto', true);
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/products/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        log(`DELETE /api/products/${id} → ${res.status}: ${data.mensaje}`, true);
+        return;
+      }
+
+      log(`DELETE /api/products/${id} → 200: eliminado`);
+      cargarProductos();
+    } catch (e) {
+      log(`Error de red eliminando producto: ${e.message}`, true);
+    }
+  }
+
+  // Carga inicial de productos al abrir la página
+  cargarProductos();
+</script>
+</body>
+</html>
